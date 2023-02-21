@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   runApp(const MyApp());
@@ -8,58 +9,138 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    const userIsLoggedIn = false;
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          name: "login",
+          path: "/",
+          builder: (context, state) {
+            return const LoginScreen();
+          },
+          redirect: (context, state) {
+            if (userIsLoggedIn == false) {
+              return "/";
+            }
+            return '/home';
+          },
+        ),
+        GoRoute(
+            path: "/home",
+            name: "home",
+            builder: (context, state) => const HomePage(),
+            routes: [
+              GoRoute(
+                name: "settings",
+                path: "settings/:name",
+                builder: (context, state) {
+                  return SettingsPage(name: state.params["name"]!);
+                },
+              ),
+            ],
+            redirect: (context, state) {
+              if (userIsLoggedIn == false) {
+                return "/";
+              }
+              return null;
+            }),
+      ],
+      errorBuilder: (context, state) => const ErrorScreen(),
+    );
+
+    return MaterialApp.router(
+      routerConfig: router,
+      title: "Go router",
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: const Text("Strona Główna"),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        child: ElevatedButton(
+          onPressed: () {
+            context.goNamed("settings", params: {
+              "name": "codemagic"
+            }, queryParams: {
+              "email": "example@gmail.com",
+              "age": "25",
+              "place": "India"
+            });
+          },
+          child: const Text('Przejdź do ustawień'),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+}
+
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({
+    super.key,
+    required this.name,
+  });
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: true,
+        title: Text("Ustawienia: $name"),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            context.goNamed("home");
+          },
+          child: const Text('Wróć do strony głównej'),
+        ),
+      ),
+    );
+  }
+}
+
+class ErrorScreen extends StatelessWidget {
+  const ErrorScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: true,
+        title: const Text("Error Screen"),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () => context.go("/"),
+          child: const Text("Strona Główna"),
+        ),
+      ),
+    );
+  }
+}
+
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: true,
+        title: const Text("Witaj, zaloguj się"),
+      ),
+      body: const Center(
+        child: Text("Nie jesteś zalogowany"),
       ),
     );
   }
